@@ -1,73 +1,82 @@
-# Welcome to your Lovable project
+# ConfirmIT (Legit) - Monorepo
 
-## Project info
+**AI-powered, blockchain-anchored trust verification for African commerce**
 
-**URL**: https://lovable.dev/projects/5117625b-7d05-4c79-bee1-dd8f912201e6
+🏆 **Hedera Africa Hackathon 2025** | Target: $150K in prizes
 
-## How can I edit this code?
+## 🎯 Project Overview
 
-There are several ways of editing your application.
+ConfirmIT tackles the ₦5 billion annual fraud problem in Nigeria by providing:
+- **QuickScan**: AI-powered receipt verification in <8 seconds
+- **Account Check**: Verify account trustworthiness before payment
+- **Business Directory**: Verified business registry with trust scores
+- **Hedera Integration**: Blockchain-anchored immutable proof
 
-**Use Lovable**
+## 🏗️ Monorepo Structure
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/5117625b-7d05-4c79-bee1-dd8f912201e6) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+confirmit/
+├── src/                    # Frontend (React + TypeScript + Vite)
+├── backend/                # API Gateway (NestJS)
+├── ai-service/             # AI Microservice (FastAPI)
+├── docs/                   # Documentation
+└── README.md               # This file
 ```
 
-**Edit a file directly in GitHub**
+## 🚀 Quick Start
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Frontend (Lovable/React)
+Already running in Lovable! Preview at your project URL.
 
-**Use GitHub Codespaces**
+### Backend (NestJS)
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edit .env with your credentials
+npm run start:dev
+# Server runs at http://localhost:8080
+# API docs at http://localhost:8080/api/docs
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### AI Service (FastAPI)
+```bash
+cd ai-service
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with your credentials
+uvicorn app.main:app --reload --port 8000
+# Server runs at http://localhost:8000
+# API docs at http://localhost:8000/docs
+```
 
-## What technologies are used for this project?
+## 📚 Documentation
 
-This project is built with:
+- [Backend README](./backend/README.md) - NestJS API Gateway setup
+- [AI Service README](./ai-service/README.md) - FastAPI microservice setup
+- [Frontend Guide](./docs/frontend-guide.md) - React app structure (coming soon)
+- [Architecture](./docs/architecture.md) - System design (coming soon)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🛠️ Tech Stack
 
-## How can I deploy this project?
+**Frontend**: React 18, TypeScript, Tailwind CSS, Zustand, React Query  
+**Backend**: NestJS, Firebase, Cloudinary, Redis  
+**AI**: FastAPI, Gemini Vision API, OpenCV, scikit-image  
+**Blockchain**: Hedera Hashgraph (HCS + HTS)
 
-Simply open [Lovable](https://lovable.dev/projects/5117625b-7d05-4c79-bee1-dd8f912201e6) and click on Share -> Publish.
+## 📖 Phase 0 Complete! ✅
 
-## Can I connect a custom domain to my Lovable project?
+- ✅ Frontend foundation with routing and components
+- ✅ NestJS backend structure with modules
+- ✅ FastAPI AI service foundation
+- ✅ Complete documentation and setup guides
 
-Yes, you can!
+## 🎯 Next: Phase 1 (Receipt Verification MVP)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Ready to implement the core receipt scanning feature!
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+**Built with ❤️ for Africa** | Hedera Africa Hackathon 2025
