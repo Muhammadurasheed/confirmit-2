@@ -63,9 +63,9 @@ export class HederaService {
         )
         .execute(this.client);
 
-      // 3. Get receipt
-      const receipt = await transaction.getReceipt(this.client);
-      const consensusTimestamp = receipt.consensusTimestamp;
+      // 3. Get record (contains consensusTimestamp)
+      const record = await transaction.getRecord(this.client);
+      const consensusTimestamp = record.consensusTimestamp;
 
       const anchor = {
         transaction_id: transaction.transactionId.toString(),
