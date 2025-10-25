@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
@@ -6,9 +6,11 @@ import * as crypto from 'crypto';
 @Injectable()
 export class AccountsService {
   private readonly logger = new Logger(AccountsService.name);
-  private readonly db = admin.firestore();
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject('FIRESTORE') private readonly db: admin.firestore.Firestore,
+  ) {}
 
   async checkAccount(accountNumber: string, bankCode?: string) {
     this.logger.log(`Checking account: ${accountNumber}`);
