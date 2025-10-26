@@ -2,20 +2,46 @@ import { Controller, Post, Get, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AccountsService } from './accounts.service';
 
+class CheckAccountDto {
+  account_number: string;
+  bank_code?: string;
+  business_name?: string;
+}
+
+class ReportFraudDto {
+  account_number: string;
+  category: string;
+  description: string;
+}
+
 @ApiTags('accounts')
 @Controller('accounts')
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
   @Post('check')
-  @ApiOperation({ summary: 'Check account trustworthiness' })
-  async checkAccount(@Body() body: { accountNumber: string; bankCode?: string }) {
-    return this.accountsService.checkAccount(body.accountNumber, body.bankCode);
+  @ApiOperation({ summary: 'Check account trustworthiness and fraud reports' })
+  async checkAccount(@Body() dto: CheckAccountDto) {
+    return this.accountsService.checkAccount(
+      dto.account_number,
+      dto.bank_code,
+      dto.business_name,
+    );
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get account details' })
+  @ApiOperation({ summary: 'Get account details by account ID' })
   async getAccount(@Param('id') id: string) {
     return this.accountsService.getAccount(id);
+  }
+
+  @Post('report-fraud')
+  @ApiOperation({ summary: 'Report fraudulent account activity' })
+  async reportFraud(@Body() dto: ReportFraudDto) {
+    return this.accountsService.reportFraud(
+      dto.account_number,
+      dto.category,
+      dto.description,
+    );
   }
 }
