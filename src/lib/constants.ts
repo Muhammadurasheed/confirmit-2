@@ -51,4 +51,6 @@ export const API_ENDPOINTS = {
   CHECK_ACCOUNT: `${API_BASE_URL}/api/accounts/check`,
   REGISTER_BUSINESS: `${API_BASE_URL}/api/business/register`,
   GET_BUSINESS: (id: string) => `${API_BASE_URL}/api/business/${id}`,
+  GENERATE_API_KEY: `${API_BASE_URL}/api/business/api-keys/generate`,
+  GET_BUSINESS_STATS: (id: string) => `${API_BASE_URL}/api/business/stats/${id}`,
 } as const;
