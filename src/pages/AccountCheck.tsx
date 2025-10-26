@@ -6,9 +6,10 @@ import Container from "@/components/layout/Container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ShieldCheck, TrendingDown, ArrowLeft, Flag } from "lucide-react";
+import { AlertTriangle, ShieldCheck, TrendingDown, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AccountInput } from "@/components/features/account-check/AccountInput";
+import { AccountCheckProgress } from "@/components/features/account-check/AccountCheckProgress";
 import { TrustScore } from "@/components/features/account-check/TrustScore";
 import { FraudAlerts } from "@/components/features/account-check/FraudAlerts";
 import { accountsService, type AccountCheckResult } from "@/services/accounts";
@@ -120,7 +121,7 @@ const AccountCheck = () => {
 
           {/* Main Content */}
           <AnimatePresence mode="wait">
-            {!result && (
+            {!result && !isChecking && (
               <motion.div
                 key="input"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -142,7 +143,19 @@ const AccountCheck = () => {
               </motion.div>
             )}
 
-            {result && (
+            {isChecking && (
+              <motion.div
+                key="checking"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <AccountCheckProgress />
+              </motion.div>
+            )}
+
+            {result && !isChecking && (
               <motion.div
                 key="results"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -171,27 +184,6 @@ const AccountCheck = () => {
                   verifiedBusiness={result.data.verified_business}
                   recommendation={getRecommendation(result.data)}
                 />
-
-                {/* Report Fraud Button */}
-                <Card className="border-dashed">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <Flag className="h-5 w-5 text-destructive mt-1" />
-                        <div>
-                          <p className="font-semibold">Experienced fraud with this account?</p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Help protect others by reporting suspicious activity
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="destructive">
-                        <Flag className="mr-2 h-4 w-4" />
-                        Report Fraud
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
               </motion.div>
             )}
           </AnimatePresence>
