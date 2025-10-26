@@ -44,3 +44,11 @@ export const UPLOAD_LIMITS = {
   allowedImageTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
   allowedDocumentTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
 } as const;
+
+// API Endpoints
+export const API_ENDPOINTS = {
+  SCAN_RECEIPT: `${API_BASE_URL}/api/receipts/scan`,
+  CHECK_ACCOUNT: `${API_BASE_URL}/api/accounts/check`,
+  REGISTER_BUSINESS: `${API_BASE_URL}/api/business/register`,
+  GET_BUSINESS: (id: string) => `${API_BASE_URL}/api/business/${id}`,
+} as const;

@@ -82,7 +82,7 @@ export const ResultsDisplay = ({
       {/* Trust Score & Verdict */}
       <Card className="p-8">
         <div className="flex flex-col md:flex-row items-center gap-8">
-          <TrustScoreGauge score={trustScore} size={200} />
+          <TrustScoreGauge score={trustScore} size="lg" />
           
           <div className="flex-1 text-center md:text-left space-y-4">
             <div className="flex items-center gap-3 justify-center md:justify-start">
