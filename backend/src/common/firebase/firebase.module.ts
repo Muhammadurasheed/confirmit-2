@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 
@@ -7,45 +7,72 @@ import * as admin from 'firebase-admin';
   providers: [
     {
       provide: 'FIREBASE_ADMIN',
-      useFactory: (configService: ConfigService) => {
+      useFactory: async (configService: ConfigService) => {
         if (!admin.apps.length) {
+          const projectId = configService.get<string>('firebase.projectId');
           const privateKey = configService
             .get<string>('firebase.privateKey')
             ?.replace(/\\n/g, '\n');
+          const clientEmail = configService.get<string>('firebase.clientEmail');
+          const databaseURL = configService.get<string>('firebase.databaseURL');
 
-          if (!privateKey || !configService.get('firebase.projectId')) {
-            throw new Error(
-              'Firebase configuration is incomplete. Check your .env file.',
-            );
+          if (!projectId || !privateKey || !clientEmail) {
+            console.error('⚠️ Firebase configuration incomplete', {
+              projectId,
+              hasPrivateKey: !!privateKey,
+              clientEmail,
+            });
+            throw new Error('Firebase configuration missing.');
           }
 
           admin.initializeApp({
             credential: admin.credential.cert({
-              projectId: configService.get('firebase.projectId'),
-              privateKey: privateKey,
-              clientEmail: configService.get('firebase.clientEmail'),
+              projectId,
+              privateKey,
+              clientEmail,
             }),
-            databaseURL: configService.get('firebase.databaseURL'),
-            storageBucket: `${configService.get('firebase.projectId')}.appspot.com`,
+            databaseURL,
+            storageBucket: `${projectId}.appspot.com`,
           });
+
+          console.log('✅ Firebase Admin initialized');
         }
+
         return admin;
       },
       inject: [ConfigService],
     },
     {
       provide: 'FIRESTORE',
-      useFactory: () => admin.firestore(),
+      useFactory: () => {
+        if (!admin.apps.length)
+          throw new Error('Firebase not initialized before Firestore');
+        return admin.firestore();
+      },
     },
     {
       provide: 'FIREBASE_AUTH',
-      useFactory: () => admin.auth(),
+      useFactory: () => {
+        if (!admin.apps.length)
+          throw new Error('Firebase not initialized before Auth');
+        return admin.auth();
+      },
     },
     {
       provide: 'FIREBASE_STORAGE',
-      useFactory: () => admin.storage(),
+      useFactory: () => {
+        if (!admin.apps.length)
+          throw new Error('Firebase not initialized before Storage');
+        return admin.storage();
+      },
     },
   ],
   exports: ['FIREBASE_ADMIN', 'FIRESTORE', 'FIREBASE_AUTH', 'FIREBASE_STORAGE'],
 })
-export class FirebaseModule {}
+export class FirebaseModule implements OnModuleInit {
+  onModuleInit() {
+    if (!admin.apps.length) {
+      console.error('❌ Firebase still not initialized — check config mapping.');
+    }
+  }
+}

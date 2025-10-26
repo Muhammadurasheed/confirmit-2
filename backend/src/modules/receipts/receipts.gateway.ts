@@ -36,7 +36,7 @@ export class ReceiptsGateway
     this.logger.log(`Client ${client.id} subscribed to receipt ${receiptId}`);
   }
 
-  emitProgress(receiptId: string, progress: number, status: string) {
+  emitProgress(receiptId: string, progress: number, status: string, p0: string) {
     this.server.to(receiptId).emit('progress', {
       receipt_id: receiptId,
       progress,

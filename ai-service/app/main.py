@@ -2,8 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
-from app.routers import receipts, accounts
 from app.config import settings
+
+# ✅ Initialize Firebase early
+from app.core import firebase  # <-- Add this line!
+
+# Now safe to import routers
+from app.routers import receipts, accounts
 
 # Configure structured logging
 structlog.configure(

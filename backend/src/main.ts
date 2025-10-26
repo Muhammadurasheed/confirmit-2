@@ -4,8 +4,33 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as compression from 'compression';
 import helmet from 'helmet';
+import * as admin from 'firebase-admin';
+import * as dotenv from 'dotenv';
 
 async function bootstrap() {
+  // Load .env before anything else
+  dotenv.config();
+
+  // ✅ Initialize Firebase BEFORE Nest starts
+  if (!admin.apps.length) {
+    try {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        }),
+        databaseURL: process.env.FIREBASE_DATABASE_URL,
+        storageBucket: `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
+      });
+      console.log('🔥 Firebase initialized at bootstrap');
+    } catch (err) {
+      console.error('❌ Firebase failed to initialize at bootstrap:', err);
+      process.exit(1);
+    }
+  }
+
+  // Now create the Nest app
   const app = await NestFactory.create(AppModule);
 
   // Security middleware
@@ -53,11 +78,11 @@ async function bootstrap() {
 
   console.log(`
   🚀 ConfirmIT Backend API is running!
-  
+
   📡 Server: http://localhost:${port}
   📚 API Docs: http://localhost:${port}/api/docs
   🔥 Environment: ${process.env.NODE_ENV || 'development'}
-  
+
   Bismillah - Building trust for African commerce! 🌍
   `);
 }
