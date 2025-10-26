@@ -1,10 +1,15 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, CheckCircle, XCircle, HelpCircle, ExternalLink } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, HelpCircle, Flag, Link as LinkIcon, Eye } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import TrustScoreGauge from '@/components/shared/TrustScoreGauge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ReportFraudModal } from './ReportFraudModal';
+import { ForensicDetailsModal } from './ForensicDetailsModal';
+import { HederaAnchorModal } from './HederaAnchorModal';
+import HederaBadge from '@/components/shared/HederaBadge';
 
 interface ResultsDisplayProps {
   receiptId: string;
@@ -70,8 +75,20 @@ export const ResultsDisplay = ({
   merchant,
   hederaAnchor,
 }: ResultsDisplayProps) => {
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showForensicModal, setShowForensicModal] = useState(false);
+  const [showHederaModal, setShowHederaModal] = useState(false);
+
   const config = verdictConfig[verdict];
   const VerdictIcon = config.icon;
+
+  const handleAnchorToHedera = async () => {
+    // TODO: Implement Hedera anchoring API call
+    return {
+      transactionId: '0.0.123456@1234567890.123456789',
+      explorerUrl: 'https://hashscan.io/testnet/transaction/0.0.123456@1234567890.123456789'
+    };
+  };
 
   return (
     <motion.div
@@ -187,31 +204,51 @@ export const ResultsDisplay = ({
         </AccordionItem>
       </Accordion>
 
-      {/* Hedera Blockchain Anchor */}
+      {/* Quick Actions */}
+      <Card className="p-4">
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" size="sm" onClick={() => setShowForensicModal(true)}>
+            <Eye className="h-4 w-4 mr-2" />
+            View Detailed Analysis
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowHederaModal(true)}>
+            <LinkIcon className="h-4 w-4 mr-2" />
+            Anchor on Hedera
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowReportModal(true)}>
+            <Flag className="h-4 w-4 mr-2" />
+            Report Fraud
+          </Button>
+        </div>
+      </Card>
+
+      {/* Hedera Badge */}
       {hederaAnchor && (
-        <Card className="p-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold mb-1 flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                Verified on Hedera Blockchain
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Transaction: {hederaAnchor.transaction_id.substring(0, 20)}...
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Consensus: {hederaAnchor.consensus_timestamp}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <a href={hederaAnchor.explorer_url} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View on Explorer
-              </a>
-            </Button>
-          </div>
-        </Card>
+        <HederaBadge
+          transactionId={hederaAnchor.transaction_id}
+          explorerUrl={hederaAnchor.explorer_url}
+          consensusTimestamp={hederaAnchor.consensus_timestamp}
+        />
       )}
+
+      {/* Modals */}
+      <ReportFraudModal
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+        receiptId={receiptId}
+      />
+      <ForensicDetailsModal
+        open={showForensicModal}
+        onOpenChange={setShowForensicModal}
+        forensicDetails={forensicDetails}
+      />
+      <HederaAnchorModal
+        open={showHederaModal}
+        onOpenChange={setShowHederaModal}
+        receiptId={receiptId}
+        onAnchor={handleAnchorToHedera}
+        existingAnchor={hederaAnchor || undefined}
+      />
     </motion.div>
   );
 };
