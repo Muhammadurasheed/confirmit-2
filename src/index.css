@@ -168,4 +168,21 @@ All colors MUST be HSL.
   .transition-smooth {
     transition: var(--transition-smooth);
   }
+  
+  /* Upload zone animations */
+  .upload-zone-dashed {
+    border-style: dashed;
+    border-width: 2px;
+    animation: dash 20s linear infinite;
+  }
+  
+  @keyframes dash {
+    to {
+      stroke-dashoffset: 1000;
+    }
+  }
+  
+  .story-link * {
+    @apply relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
+  }
 }
