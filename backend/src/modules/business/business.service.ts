@@ -1,11 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
+import { HederaService } from '../hedera/hedera.service';
 
 @Injectable()
 export class BusinessService {
   private readonly logger = new Logger(BusinessService.name);
   private readonly db = admin.firestore();
+
+  constructor(private readonly hederaService: HederaService) {}
 
   async registerBusiness(data: any) {
     this.logger.log(`Registering business: ${data.name}`);
@@ -126,5 +129,121 @@ export class BusinessService {
   private encryptData(data: string): string {
     // Simple base64 encoding for now - use proper encryption in production
     return Buffer.from(data).toString('base64');
+  }
+
+  /**
+   * Approve business verification and mint Trust ID NFT
+   */
+  async approveVerification(businessId: string, approvedBy: string) {
+    this.logger.log(`Approving verification for business: ${businessId}`);
+
+    try {
+      const doc = await this.db.collection('businesses').doc(businessId).get();
+
+      if (!doc.exists) {
+        throw new Error('Business not found');
+      }
+
+      const business = doc.data();
+
+      // Calculate initial trust score based on tier
+      const initialTrustScore = this.calculateInitialTrustScore(
+        business.verification.tier,
+      );
+
+      // Mint Trust ID NFT on Hedera
+      const nftData = await this.hederaService.mintTrustIdNFT(
+        businessId,
+        business.name,
+        initialTrustScore,
+        business.verification.tier,
+      );
+
+      // Update business document
+      await this.db
+        .collection('businesses')
+        .doc(businessId)
+        .update({
+          'verification.status': 'approved',
+          'verification.verified': true,
+          'verification.approved_at': admin.firestore.FieldValue.serverTimestamp(),
+          'verification.approved_by': approvedBy,
+          trust_score: initialTrustScore,
+          hedera: {
+            trust_id_nft: {
+              token_id: nftData.token_id,
+              serial_number: nftData.serial_number,
+              explorer_url: nftData.explorer_url,
+            },
+          },
+        });
+
+      this.logger.log(
+        `Business ${businessId} verified successfully with NFT ${nftData.serial_number}`,
+      );
+
+      return {
+        success: true,
+        business_id: businessId,
+        trust_score: initialTrustScore,
+        nft: nftData,
+        message: 'Business verified successfully and Trust ID NFT minted',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Business verification failed: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update business trust score and anchor to Hedera
+   */
+  async updateTrustScore(businessId: string, newTrustScore: number) {
+    this.logger.log(
+      `Updating trust score for ${businessId} to ${newTrustScore}`,
+    );
+
+    try {
+      // Update trust score and anchor change to Hedera
+      const hederaUpdate = await this.hederaService.updateTrustScore(
+        businessId,
+        newTrustScore,
+      );
+
+      // Update business document
+      await this.db
+        .collection('businesses')
+        .doc(businessId)
+        .update({
+          trust_score: newTrustScore,
+          last_trust_update: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+      return {
+        success: true,
+        business_id: businessId,
+        new_trust_score: newTrustScore,
+        hedera_anchor: hederaUpdate.hedera_anchor,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Trust score update failed: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  private calculateInitialTrustScore(tier: number): number {
+    // Tier-based initial trust scores
+    const scores = {
+      1: 50, // Basic: Starting trust
+      2: 70, // Verified: Higher initial trust
+      3: 85, // Premium: High initial trust
+    };
+    return scores[tier] || 50;
   }
 }

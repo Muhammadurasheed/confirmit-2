@@ -6,6 +6,13 @@ import {
   PrivateKey,
   TopicMessageSubmitTransaction,
   TopicId,
+  TokenCreateTransaction,
+  TokenType,
+  TokenSupplyType,
+  TokenMintTransaction,
+  TransferTransaction,
+  TokenAssociateTransaction,
+  TokenId,
 } from '@hashgraph/sdk';
 import * as crypto from 'crypto';
 import * as admin from 'firebase-admin';
@@ -102,6 +109,178 @@ export class HederaService {
     } catch (error) {
       this.logger.error(`Anchor verification failed: ${error.message}`);
       return false;
+    }
+  }
+
+  /**
+   * Mint Trust ID NFT for verified business
+   * This creates a unique, non-transferable NFT representing business trust score
+   */
+  async mintTrustIdNFT(
+    businessId: string,
+    businessName: string,
+    trustScore: number,
+    verificationTier: number,
+  ): Promise<any> {
+    this.logger.log(`Minting Trust ID NFT for business: ${businessId}`);
+
+    try {
+      const tokenId = TokenId.fromString(
+        this.configService.get('hedera.tokenId'),
+      );
+
+      // Create NFT metadata
+      const metadata = {
+        business_id: businessId,
+        business_name: businessName,
+        trust_score: trustScore,
+        verification_tier: verificationTier,
+        verified_at: new Date().toISOString(),
+        network: 'Legit (ConfirmIT)',
+        type: 'Trust_ID_Certificate',
+      };
+
+      const metadataBuffer = Buffer.from(JSON.stringify(metadata));
+
+      // Mint NFT
+      const mintTx = await new TokenMintTransaction()
+        .setTokenId(tokenId)
+        .setMetadata([metadataBuffer])
+        .execute(this.client);
+
+      const mintReceipt = await mintTx.getReceipt(this.client);
+      const serialNumber = mintReceipt.serials[0];
+
+      this.logger.log(
+        `NFT minted successfully. Serial: ${serialNumber.toString()}`,
+      );
+
+      const nftData = {
+        token_id: tokenId.toString(),
+        serial_number: serialNumber.toString(),
+        business_id: businessId,
+        metadata,
+        mint_transaction_id: mintTx.transactionId.toString(),
+        explorer_url: `https://hashscan.io/${this.configService.get('hedera.network')}/token/${tokenId}/serial/${serialNumber}`,
+        minted_at: admin.firestore.FieldValue.serverTimestamp(),
+      };
+
+      // Store NFT info in Firestore
+      await this.db.collection('hedera_nfts').add(nftData);
+
+      // Update business document with NFT info
+      await this.db
+        .collection('businesses')
+        .doc(businessId)
+        .update({
+          'hedera.trust_id_nft': {
+            token_id: tokenId.toString(),
+            serial_number: serialNumber.toString(),
+            explorer_url: nftData.explorer_url,
+          },
+        });
+
+      return nftData;
+    } catch (error) {
+      this.logger.error(
+        `Trust ID NFT minting failed: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update Trust ID NFT metadata when trust score changes
+   */
+  async updateTrustScore(
+    businessId: string,
+    newTrustScore: number,
+  ): Promise<any> {
+    this.logger.log(`Updating trust score for business: ${businessId}`);
+
+    try {
+      // Get existing NFT info
+      const businessDoc = await this.db
+        .collection('businesses')
+        .doc(businessId)
+        .get();
+      const business = businessDoc.data();
+
+      if (!business?.hedera?.trust_id_nft) {
+        throw new Error('No Trust ID NFT found for this business');
+      }
+
+      // Create update transaction record
+      const updateRecord = {
+        business_id: businessId,
+        old_trust_score: business.trust_score,
+        new_trust_score: newTrustScore,
+        nft_serial: business.hedera.trust_id_nft.serial_number,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Anchor update to HCS
+      const anchor = await this.anchorToHCS(
+        `TRUST_UPDATE_${businessId}`,
+        updateRecord,
+      );
+
+      // Store update history
+      await this.db.collection('trust_score_updates').add({
+        ...updateRecord,
+        hedera_anchor: anchor,
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {
+        success: true,
+        update_record: updateRecord,
+        hedera_anchor: anchor,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Trust score update failed: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get Hedera verification status for entity
+   */
+  async getVerificationStatus(entityId: string): Promise<any> {
+    try {
+      const anchors = await this.db
+        .collection('hedera_anchors')
+        .where('entity_id', '==', entityId)
+        .orderBy('created_at', 'desc')
+        .limit(1)
+        .get();
+
+      if (anchors.empty) {
+        return {
+          verified: false,
+          message: 'Not anchored on Hedera',
+        };
+      }
+
+      const anchor = anchors.docs[0].data();
+
+      return {
+        verified: true,
+        transaction_id: anchor.transaction_id,
+        consensus_timestamp: anchor.consensus_timestamp,
+        explorer_url: anchor.explorer_url,
+        verified_at: anchor.created_at,
+      };
+    } catch (error) {
+      this.logger.error(`Verification status check failed: ${error.message}`);
+      return {
+        verified: false,
+        error: error.message,
+      };
     }
   }
 }

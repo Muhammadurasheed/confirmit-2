@@ -37,4 +37,28 @@ export class BusinessController {
   async getBusinessStats(@Param('id') id: string) {
     return this.businessService.getBusinessStats(id);
   }
+
+  @Post('verify/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Approve business verification and mint NFT' })
+  async approveVerification(
+    @Param('id') id: string,
+    @Body() body: { approvedBy: string },
+  ) {
+    return this.businessService.approveVerification(id, body.approvedBy);
+  }
+
+  @Post('trust-score/update')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update business trust score' })
+  async updateTrustScore(
+    @Body() body: { businessId: string; newTrustScore: number },
+  ) {
+    return this.businessService.updateTrustScore(
+      body.businessId,
+      body.newTrustScore,
+    );
+  }
 }

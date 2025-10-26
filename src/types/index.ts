@@ -142,7 +142,11 @@ export interface ApiKey {
 }
 
 export interface HederaInfo {
-  trustIdNft?: string;
+  trustIdNft?: {
+    tokenId: string;
+    serialNumber: string;
+    explorerUrl: string;
+  };
   walletAddress?: string;
 }
 

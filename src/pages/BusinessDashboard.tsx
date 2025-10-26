@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import TrustScoreGauge from "@/components/shared/TrustScoreGauge";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import TrustIdNftCard from "@/components/shared/TrustIdNftCard";
 import { getBusiness, getBusinessStats, generateApiKey } from "@/services/business";
 import { Business, BusinessStats } from "@/types";
 import {
@@ -249,6 +250,23 @@ const BusinessDashboard = () => {
                   </CardContent>
                 </Card>
               </motion.div>
+
+              {/* Trust ID NFT - Show prominently if business is verified */}
+              {business.hedera?.trustIdNft && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  <TrustIdNftCard
+                    tokenId={business.hedera.trustIdNft.tokenId}
+                    serialNumber={business.hedera.trustIdNft.serialNumber}
+                    explorerUrl={business.hedera.trustIdNft.explorerUrl}
+                    trustScore={business.trustScore}
+                    verificationTier={business.verification?.tier || 1}
+                    businessName={business.name}
+                  />
+                </motion.div>
+              )}
 
               {/* Business Information */}
               <Card className="shadow-elegant">
