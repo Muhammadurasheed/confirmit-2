@@ -18,24 +18,22 @@ export interface ResolveAccountResponse {
 
 /**
  * Resolves a Nigerian bank account number to get the account name
- * Uses Paystack's Account Resolution API
+ * Calls our secure backend endpoint which handles Paystack API
  */
 export const resolveAccountNumber = async (
   params: ResolveAccountParams
 ): Promise<ResolveAccountResponse> => {
   try {
-    // In production, this would call your backend which has the Paystack secret key
-    // Never expose Paystack secret key on frontend
     const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL || 'https://api.legit.africa'}/api/business/resolve-account`,
+      `${import.meta.env.VITE_API_BASE_URL || 'https://api.legit.africa'}/api/accounts/resolve`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          account_number: params.accountNumber,
-          bank_code: params.bankCode,
+          accountNumber: params.accountNumber,
+          bankCode: params.bankCode,
         }),
       }
     );
@@ -44,11 +42,19 @@ export const resolveAccountNumber = async (
       const error = await response.json();
       return {
         success: false,
-        message: error.message || 'Failed to verify account',
+        message: error.error || 'Failed to verify account',
       };
     }
 
     const data = await response.json();
+    
+    if (!data.success) {
+      return {
+        success: false,
+        message: data.error || 'Failed to verify account',
+      };
+    }
+
     return {
       success: true,
       data: data.data,

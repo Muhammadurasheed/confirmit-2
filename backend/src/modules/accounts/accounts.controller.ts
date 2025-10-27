@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AccountsService } from './accounts.service';
+import { ResolveAccountDto } from './dto/resolve-account.dto';
 
 class CheckAccountDto {
   account_number: string;
@@ -42,6 +43,15 @@ export class AccountsController {
       dto.account_number,
       dto.category,
       dto.description,
+    );
+  }
+
+  @Post('resolve')
+  @ApiOperation({ summary: 'Resolve account name from account number and bank code using Paystack' })
+  async resolveAccount(@Body() dto: ResolveAccountDto) {
+    return this.accountsService.resolveAccount(
+      dto.accountNumber,
+      dto.bankCode,
     );
   }
 }

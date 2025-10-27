@@ -193,6 +193,56 @@ export class AccountsService {
     };
   }
 
+  async resolveAccount(accountNumber: string, bankCode: string) {
+    this.logger.log(`Resolving account: ${accountNumber.slice(0, 4)}**** for bank: ${bankCode}`);
+
+    const paystackSecretKey = this.configService.get('PAYSTACK_SECRET_KEY');
+    
+    if (!paystackSecretKey) {
+      throw new Error('Paystack secret key not configured');
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${paystackSecretKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.status) {
+        this.logger.error(`Paystack resolution failed: ${data.message}`);
+        return {
+          success: false,
+          error: data.message || 'Failed to resolve account',
+        };
+      }
+
+      this.logger.log(`Account resolved successfully: ${data.data.account_name}`);
+
+      return {
+        success: true,
+        data: {
+          account_number: data.data.account_number,
+          account_name: data.data.account_name,
+          bank_id: data.data.bank_id,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Account resolution error: ${error.message}`, error.stack);
+      return {
+        success: false,
+        error: 'Failed to resolve account. Please verify the account number and bank code.',
+      };
+    }
+  }
+
   private hashAccountNumber(accountNumber: string): string {
     return crypto.createHash('sha256').update(accountNumber).digest('hex');
   }

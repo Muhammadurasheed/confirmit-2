@@ -49,6 +49,7 @@ export const UPLOAD_LIMITS = {
 export const API_ENDPOINTS = {
   SCAN_RECEIPT: `${API_BASE_URL}/api/receipts/scan`,
   CHECK_ACCOUNT: `${API_BASE_URL}/api/accounts/check`,
+  RESOLVE_ACCOUNT: `${API_BASE_URL}/api/accounts/resolve`,
   REGISTER_BUSINESS: `${API_BASE_URL}/api/business/register`,
   GET_BUSINESS: (id: string) => `${API_BASE_URL}/api/business/${id}`,
   GENERATE_API_KEY: `${API_BASE_URL}/api/business/api-keys/generate`,
