@@ -12,14 +12,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import RegistrationForm from "@/components/features/business/RegistrationForm";
+import TierSelector from "@/components/features/business/TierSelector";
+import BankAccountStep from "@/components/features/business/BankAccountStep";
+import PaymentStep from "@/components/features/business/PaymentStep";
 import { registerBusiness } from "@/services/business";
-import { Building2, CheckCircle2 } from "lucide-react";
+import { Building2, CheckCircle2, Loader2 } from "lucide-react";
+import { Form } from "@/components/ui/form";
+import { BUSINESS_TIERS } from "@/lib/constants";
 
 const steps = [
   { id: 1, title: "Basic Information", description: "Tell us about your business" },
   { id: 2, title: "Bank Details", description: "Account information for verification" },
   { id: 3, title: "Documents", description: "Upload verification documents" },
-  { id: 4, title: "Review & Submit", description: "Confirm and complete registration" },
+  { id: 4, title: "Review & Payment", description: "Review and complete payment" },
 ];
 
 export const businessSchema = z.object({
@@ -49,8 +54,11 @@ export type BusinessFormData = z.infer<typeof businessSchema>;
 
 const BusinessRegister = () => {
   const navigate = useNavigate();
+  const [showTierSelector, setShowTierSelector] = useState(true);
+  const [selectedTier, setSelectedTier] = useState<1 | 2 | 3 | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
 
   const form = useForm<BusinessFormData>({
     resolver: zodResolver(businessSchema),
@@ -90,8 +98,18 @@ const BusinessRegister = () => {
     }
   };
 
-  const onSubmit = async (data: BusinessFormData) => {
+  const handleTierSelection = (tier: 1 | 2 | 3) => {
+    setSelectedTier(tier);
+    setShowTierSelector(false);
+    form.setValue("tier", tier.toString() as "1" | "2" | "3");
+  };
+
+  const handlePaymentComplete = async (paymentMethod: string, transactionId: string) => {
+    setPaymentComplete(true);
     setIsSubmitting(true);
+
+    const data = form.getValues();
+    
     try {
       const response = await registerBusiness({
         name: data.name,
@@ -122,6 +140,7 @@ const BusinessRegister = () => {
         }, 2000);
       }
     } catch (error: any) {
+      setPaymentComplete(false);
       toast.error("Registration failed", {
         description: error.message || "Please try again later.",
       });
@@ -131,6 +150,21 @@ const BusinessRegister = () => {
   };
 
   const progress = (currentStep / steps.length) * 100;
+
+  // Show tier selector first
+  if (showTierSelector) {
+    return (
+      <div className="flex min-h-screen flex-col bg-gradient-subtle">
+        <Header />
+        <main className="flex-1 py-12">
+          <Container className="max-w-6xl">
+            <TierSelector onSelectTier={handleTierSelection} />
+          </Container>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-subtle">
@@ -150,7 +184,7 @@ const BusinessRegister = () => {
             </div>
             <h1 className="text-4xl font-bold mb-3">Register Your Business</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Join the verified business directory and build trust with your customers
+              Tier {selectedTier} {selectedTier && BUSINESS_TIERS[selectedTier].name} Verification
             </p>
           </motion.div>
 
@@ -211,37 +245,59 @@ const BusinessRegister = () => {
                   <CardDescription>{steps[currentStep - 1].description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RegistrationForm
-                    form={form}
-                    currentStep={currentStep}
-                    onSubmit={form.handleSubmit(onSubmit)}
-                  />
+                  <Form {...form}>
+                    {currentStep === 2 ? (
+                      <BankAccountStep form={form} />
+                    ) : currentStep === 4 ? (
+                      <PaymentStep
+                        tier={selectedTier!}
+                        onPaymentComplete={handlePaymentComplete}
+                      />
+                    ) : (
+                      <RegistrationForm
+                        form={form}
+                        currentStep={currentStep}
+                        onSubmit={form.handleSubmit(() => {})}
+                      />
+                    )}
+                  </Form>
 
                   {/* Navigation Buttons */}
-                  <div className="flex justify-between mt-8 pt-6 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleBack}
-                      disabled={currentStep === 1 || isSubmitting}
-                    >
-                      Back
-                    </Button>
-
-                    {currentStep < steps.length ? (
-                      <Button type="button" onClick={handleNext}>
-                        Next
-                      </Button>
-                    ) : (
+                  {currentStep !== 4 && (
+                    <div className="flex justify-between mt-8 pt-6 border-t">
                       <Button
-                        type="submit"
-                        onClick={form.handleSubmit(onSubmit)}
+                        type="button"
+                        variant="outline"
+                        onClick={handleBack}
+                        disabled={currentStep === 1 || isSubmitting}
+                      >
+                        Back
+                      </Button>
+
+                      <Button
+                        type="button"
+                        onClick={handleNext}
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? "Submitting..." : "Submit Registration"}
+                        {currentStep < steps.length ? "Next" : "Continue to Payment"}
                       </Button>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Processing Overlay */}
+                  {paymentComplete && isSubmitting && (
+                    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                      <Card className="p-8 text-center space-y-4">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+                        <div>
+                          <h3 className="text-lg font-semibold">Processing Registration...</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Please wait while we complete your registration
+                          </p>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
